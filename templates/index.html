@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧠 AI Memory Compression Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🧠</span>
+        <div>
+          <h1>AI Memory Compression Engine</h1>
+          <p>Multi-strategy LLM memory management</p>
+        </div>
+      </div>
+      <div class="header-controls">
+        <div class="status-chip" id="statusChip">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusLabel">Checking...</span>
+        </div>
+        <div class="session-row">
+          <label>Session:</label>
+          <input type="text" id="sessionId" value="demo_session" class="session-input">
+          <button class="btn btn-sm btn-outline" onclick="createSession()">New</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+
+    <!-- LEFT: Chat Panel -->
+    <aside class="panel panel-left">
+      <div class="panel-header">
+        <span class="panel-icon">💬</span>
+        <h2>Memory-Aware Chat</h2>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-welcome">
+          <div class="welcome-icon">🧠</div>
+          <p>Start chatting. Every message is managed through the memory compression engine — working memory, episodic summaries, and semantic facts.</p>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="system-prompt-row">
+          <label>System Prompt</label>
+          <input type="text" id="systemPrompt" value="You are a helpful AI assistant with persistent memory." class="sys-input">
+        </div>
+        <div class="input-row">
+          <textarea id="userInput" placeholder="Type your message..." rows="3" onkeydown="handleEnter(event)"></textarea>
+          <button class="btn btn-send" onclick="sendChat()" id="sendBtn">
+            <span>Send</span> <span>↑</span>
+          </button>
+        </div>
+        <div class="chat-meta" id="chatMeta"></div>
+      </div>
+    </aside>
+
+    <!-- CENTER: Memory Visualizer -->
+    <main class="panel panel-center">
+      <div class="panel-header">
+        <span class="panel-icon">📊</span>
+        <h2>Memory Visualizer</h2>
+        <div class="panel-actions">
+          <button class="btn btn-sm btn-outline" onclick="refreshVisualize()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Token Budget Gauge -->
+      <div class="budget-section">
+        <div class="budget-header">
+          <span>Token Budget Usage</span>
+          <span id="budgetLabel">0 / 4000 tokens</span>
+        </div>
+        <div class="budget-bar-track">
+          <div class="budget-bar-fill" id="budgetFill"></div>
+        </div>
+        <div class="budget-pct" id="budgetPct">0%</div>
+      </div>
+
+      <!-- Tier Stats -->
+      <div class="tier-grid" id="tierGrid">
+        <div class="tier-card" data-tier="working">
+          <div class="tier-icon">⚡</div>
+          <div class="tier-name">Working</div>
+          <div class="tier-count" id="count-working">0</div>
+          <div class="tier-tokens" id="tokens-working">0 tokens</div>
+          <div class="tier-desc">Recent turns — full fidelity</div>
+        </div>
+        <div class="tier-card" data-tier="episodic">
+          <div class="tier-icon">📚</div>
+          <div class="tier-name">Episodic</div>
+          <div class="tier-count" id="count-episodic">0</div>
+          <div class="tier-tokens" id="tokens-episodic">0 tokens</div>
+          <div class="tier-desc">Compressed session summaries</div>
+        </div>
+        <div class="tier-card" data-tier="semantic">
+          <div class="tier-icon">💡</div>
+          <div class="tier-name">Semantic</div>
+          <div class="tier-count" id="count-semantic">0</div>
+          <div class="tier-tokens" id="tokens-semantic">0 tokens</div>
+          <div class="tier-desc">Distilled facts & knowledge</div>
+        </div>
+        <div class="tier-card" data-tier="archival">
+          <div class="tier-icon">🗄️</div>
+          <div class="tier-name">Archival</div>
+          <div class="tier-count" id="count-archival">0</div>
+          <div class="tier-tokens" id="tokens-archival">0 tokens</div>
+          <div class="tier-desc">Deep history, rarely retrieved</div>
+        </div>
+      </div>
+
+      <!-- Memory Timeline -->
+      <div class="timeline-section">
+        <div class="section-header">
+          <h3>Memory Timeline</h3>
+          <div class="tier-filter">
+            <button class="filter-btn active" onclick="filterTimeline('all', this)">All</button>
+            <button class="filter-btn" onclick="filterTimeline('working', this)">Working</button>
+            <button class="filter-btn" onclick="filterTimeline('episodic', this)">Episodic</button>
+            <button class="filter-btn" onclick="filterTimeline('semantic', this)">Semantic</button>
+            <button class="filter-btn" onclick="filterTimeline('archival', this)">Archival</button>
+          </div>
+        </div>
+        <div class="timeline" id="memoryTimeline">
+          <div class="empty-timeline">No memories yet. Start chatting!</div>
+        </div>
+      </div>
+
+      <!-- Compression Chart -->
+      <div class="chart-section">
+        <h3>Compression History</h3>
+        <div class="chart-container" id="compressionChart">
+          <div class="empty-chart">No compressions yet.</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT: Controls Panel -->
+    <aside class="panel panel-right">
+      <div class="panel-header">
+        <span class="panel-icon">⚙️</span>
+        <h2>Controls</h2>
+      </div>
+
+      <!-- Compression Controls -->
+      <div class="control-section">
+        <h3>🗜️ Compress Memory</h3>
+        <div class="strategy-grid">
+          <button class="strategy-btn" onclick="compress('hybrid')" title="Deduplicate + Hierarchical + Summarize + Prune">
+            <span class="s-icon">🔀</span>
+            <span class="s-name">Hybrid</span>
+            <span class="s-desc">All strategies</span>
+          </button>
+          <button class="strategy-btn" onclick="compress('summarize')" title="LLM-based summarization of episodic memory">
+            <span class="s-icon">📝</span>
+            <span class="s-name">Summarize</span>
+            <span class="s-desc">LLM compression</span>
+          </button>
+          <button class="strategy-btn" onclick="compress('deduplicate')" title="Remove semantically redundant entries">
+            <span class="s-icon">🔍</span>
+            <span class="s-name">Dedup</span>
+            <span class="s-desc">Remove duplicates</span>
+          </button>
+          <button class="strategy-btn" onclick="compress('score_prune')" title="Drop lowest-importance memories">
+            <span class="s-icon">✂️</span>
+            <span class="s-name">Prune</span>
+            <span class="s-desc">Drop low-value</span>
+          </button>
+          <button class="strategy-btn" onclick="compress('hierarchical')" title="Promote/demote across memory tiers">
+            <span class="s-icon">🏗️</span>
+            <span class="s-name">Hierarchical</span>
+            <span class="s-desc">Tier promotion</span>
+          </button>
+        </div>
+
+        <div class="compression-result hidden" id="compressionResult">
+          <div class="cr-title">Last Compression</div>
+          <div class="cr-stats">
+            <div class="cr-stat"><span id="crStrategy">-</span><small>Strategy</small></div>
+            <div class="cr-stat"><span id="crSaved">-</span><small>Tokens Saved</small></div>
+            <div class="cr-stat"><span id="crRatio">-</span><small>Ratio</small></div>
+            <div class="cr-stat"><span id="crTime">-</span><small>Time</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="control-section">
+        <h3>🔍 Memory Search</h3>
+        <div class="search-row">
+          <input type="text" id="searchQuery" placeholder="Search memories..." class="search-input">
+          <button class="btn btn-sm btn-primary" onclick="searchMemory()">Search</button>
+        </div>
+        <div class="search-results" id="searchResults"></div>
+      </div>
+
+      <!-- Add Memory -->
+      <div class="control-section">
+        <h3>➕ Inject Memory</h3>
+        <select id="injectRole" class="select-input">
+          <option value="user">User</option>
+          <option value="assistant">Assistant</option>
+          <option value="system">System</option>
+        </select>
+        <textarea id="injectContent" placeholder="Memory content to inject..." rows="3" class="inject-textarea"></textarea>
+        <button class="btn btn-sm btn-primary" style="width:100%;margin-top:8px" onclick="injectMemory()">Inject into Memory</button>
+      </div>
+
+      <!-- Clear Controls -->
+      <div class="control-section">
+        <h3>🗑️ Clear Memory</h3>
+        <div class="clear-grid">
+          <button class="btn btn-sm btn-danger-outline" onclick="clearTier('working')">Working</button>
+          <button class="btn btn-sm btn-danger-outline" onclick="clearTier('episodic')">Episodic</button>
+          <button class="btn btn-sm btn-danger-outline" onclick="clearTier('semantic')">Semantic</button>
+          <button class="btn btn-sm btn-danger-outline" onclick="clearTier('archival')">Archival</button>
+        </div>
+        <button class="btn btn-sm btn-danger" style="width:100%;margin-top:8px" onclick="clearAll()">⚠️ Clear All Memory</button>
+      </div>
+
+      <!-- Live Stats -->
+      <div class="control-section">
+        <h3>📈 Live Stats</h3>
+        <div class="stats-list" id="statsList">
+          <div class="stat-row"><span>Total Tokens</span><span id="statTotal">0</span></div>
+          <div class="stat-row"><span>Total Entries</span><span id="statEntries">0</span></div>
+          <div class="stat-row"><span>Compressions</span><span id="statCompressions">0</span></div>
+          <div class="stat-row"><span>Budget Used</span><span id="statBudget">0%</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
