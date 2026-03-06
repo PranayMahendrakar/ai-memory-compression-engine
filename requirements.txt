@@ -1,0 +1,17 @@
+# AI Memory Compression Engine - Dependencies
+
+# Core
+flask>=3.0.0
+flask-cors>=4.0.0
+openai>=1.10.0
+python-dotenv>=1.0.0
+werkzeug>=3.0.0
+
+# Optional: Better token counting (highly recommended)
+tiktoken>=0.5.0
+
+# Optional: Semantic similarity (for embedding-based dedup)
+# numpy>=1.24.0
+
+# Production server
+gunicorn>=21.0.0
